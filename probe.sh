@@ -112,7 +112,7 @@ checkv() {
         # Extract version using bash parameter expansion instead of grep -oE
         local ver="${raw##* }"
         ver="${ver%%[^0-9.]*}"
-        if [ -n "$ver" ] && [[ "$ver" =~ ^[0-9] ]]; then
+        if [ -n "$ver" ]; then
             echo -e "${GREEN}[✓]${NC} $name ${BLUE}($ver)${NC}"
         else
             echo -e "${GREEN}[✓]${NC} $name"
@@ -206,7 +206,11 @@ detect_audio() {
     checklib "ALSA" "alsa" "libasound"
     checkv "PulseAudio" "pulseaudio" "--version"
     checkv "PipeWire" "pipewire" "--version"
-    [ "$PLATFORM" = "macos" ] && echo -e "${GREEN}[✓]${NC} CoreAudio (macOS)" || echo -e "${RED}[✗]${NC} CoreAudio (macOS)"
+    if [ "$PLATFORM" = "macos" ]; then
+        echo -e "${GREEN}[✓]${NC} CoreAudio (macOS)"
+    else
+        echo -e "${RED}[✗]${NC} CoreAudio (not available)"
+    fi
     [ -c /dev/dsp ] || [ -c /dev/audio ] && echo -e "${GREEN}[✓]${NC} OSS (BSD)" || echo -e "${RED}[✗]${NC} OSS (BSD)"
     checklib "SDL2 Mixer" "SDL2_mixer" "libSDL2_mixer"
     checklib "OpenAL" "openal" "libopenal"
