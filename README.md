@@ -55,6 +55,6 @@ libprobe
 GPL-3.0
 
 
-# Future updates (Not 100%)
+# Future updates
 
-MIGHT (Big maybe) be adding Mac and BSD support
+Might be adding Mac and BSD support (Not wsl because like... no)
