@@ -30,14 +30,16 @@ vlog() { [ "$VERBOSE" -eq 1 ] && echo -e "  ${BLUE}[debug]${NC} $*"; }
 
 print_header() {
     echo -e "${BLUE}"
-    echo "  _ _ _                    _          "
-    echo " | (_) |__ _ __  _ _ ___ | |__  ___  "
-    echo " | | | '_ \ '_ \| '_/ _ \| '_ \/ -_) "
-    echo " |_|_|_.__/ .__/|_| \___/|_.__/\___| "
-    echo "          |_|                          "
+    echo "      / \\          libprobe v$VERSION"
+    echo "     /   \\         System Capability Scanner"
+    echo "    / .-. \\"
+    echo "   / /   \\ \\"
+    echo "  / /  ^  \\ \\"
+    echo "  \\ \\     / /"
+    echo "   \\ \\___/ /"
+    echo "    \\     /"
+    echo "     \\___/"
     echo -e "${NC}"
-    echo "libprobe v$VERSION - System Capability Scanner"
-    echo "============================================"
     echo ""
 }
 
