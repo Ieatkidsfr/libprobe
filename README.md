@@ -1,14 +1,31 @@
 # libprobe
+
 A lightweight system capability scanner for any Linux environment. Works headless, in a terminal, or on a full desktop.
 
 Detects what graphics, audio, languages, and frameworks your system can run — useful when moving drives between machines or setting up a new environment.
 
-Detects:
+## Install
 
-  OS and kernel info
-  Display server (X11, Wayland, headless)
-  Graphics libraries (OpenGL, Vulkan, SDL2, SFML, Allegro, Raylib)
-  Audio libraries (ALSA, PulseAudio, PipeWire, OpenAL)
-  Languages and runtimes (Python, Rust, C, Go, Java, Node, Lua...)
-  Game and multimedia frameworks
-  Terminal capabilities
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ieatkidsfr/libprobe/main/install.sh | bash
+```
+
+## Usage
+
+```bash
+libprobe
+```
+
+## What it detects
+
+- OS and kernel info
+- Display server (X11, Wayland, headless)
+- Graphics libraries (OpenGL, Vulkan, SDL2, SFML, Allegro, Raylib)
+- Audio libraries (ALSA, PulseAudio, PipeWire, OpenAL)
+- Languages and runtimes (Python, Rust, C, Go, Java, Node, Lua...)
+- Game and multimedia frameworks
+- Terminal capabilities
+
+## License
+
+GPL-3.0
