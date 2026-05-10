@@ -57,4 +57,4 @@ GPL-3.0
 
 # Future updates (Not 100%)
 
-Coming soon!
+MIGHT (Big maybe) be adding Mac and BSD support
