@@ -7,17 +7,17 @@ Detects what graphics, audio, languages, and frameworks your system can run — 
 
 ## Install
 
-**curl** (most common):
+**curl**:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Ieatkidsfr/libprobe/main/install.sh | bash
 ```
 
-**wget** (if curl isn't available):
+**wget**:
 ```bash
 wget -qO- https://raw.githubusercontent.com/Ieatkidsfr/libprobe/main/install.sh | bash
 ```
 
-**git** (clone the whole repo):
+**git**:
 ```bash
 git clone https://github.com/Ieatkidsfr/libprobe
 cd libprobe
