@@ -1,6 +1,5 @@
 # libprobe
 
-Future updates on the bottom!
 
 A lightweight system capability scanner for any Linux environment. Works headless, in a terminal, or on a full desktop.
 
