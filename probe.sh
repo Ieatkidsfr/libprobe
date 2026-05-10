@@ -34,15 +34,92 @@ check() {
     fi
 }
 
+# Check with version number
+checkv() {
+    local name=$1
+    local cmd=$2
+    local vercmd=$3
+    if eval "$cmd" &>/dev/null; then
+        local ver
+        ver=$(eval "$vercmd" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+[\.0-9]*' | head -1)
+        if [ -n "$ver" ]; then
+            echo -e "${GREEN}[✓]${NC} $name ${BLUE}($ver)${NC}"
+        else
+            echo -e "${GREEN}[✓]${NC} $name"
+        fi
+    else
+        echo -e "${RED}[✗]${NC} $name"
+    fi
+}
+
+# Check library with version via pkg-config or lib_check
+checklib() {
+    local name=$1
+    local pkgname=$2
+    local libname=$3
+    local ver=""
+    if pkg-config --exists "$pkgname" 2>/dev/null; then
+        ver=$(pkg-config --modversion "$pkgname" 2>/dev/null)
+        echo -e "${GREEN}[✓]${NC} $name ${BLUE}($ver)${NC}"
+    elif lib_check "$libname"; then
+        echo -e "${GREEN}[✓]${NC} $name"
+    else
+        echo -e "${RED}[✗]${NC} $name"
+    fi
+}
+
+# Detect platform early — everything else uses this
+detect_platform() {
+    PLATFORM="unknown"
+    case "$(uname -s)" in
+        Linux*)   PLATFORM="linux" ;;
+        Darwin*)  PLATFORM="macos" ;;
+        FreeBSD*) PLATFORM="freebsd" ;;
+        OpenBSD*) PLATFORM="openbsd" ;;
+        NetBSD*)  PLATFORM="netbsd" ;;
+        *)        PLATFORM="unknown" ;;
+    esac
+    export PLATFORM
+}
+
+# Cross-platform library check
+lib_check() {
+    local libname=$1
+    case "$PLATFORM" in
+        macos)
+            find /usr/local/lib /opt/homebrew/lib /usr/lib 2>/dev/null -name "${libname}*" | grep -q .
+            ;;
+        freebsd|openbsd|netbsd)
+            ldconfig -r 2>/dev/null | grep -q "$libname" || find /usr/local/lib /usr/lib 2>/dev/null -name "${libname}*" | grep -q .
+            ;;
+        *)
+            ldconfig -p 2>/dev/null | grep -q "$libname"
+            ;;
+    esac
+}
+
 # OS Detection
 detect_os() {
     echo -e "${YELLOW}== OS ==${NC}"
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        echo "  Name: $NAME"
-        echo "  Version: $VERSION_ID"
-        echo "  ID: $ID"
-    fi
+    echo "  Platform: $PLATFORM"
+    case "$PLATFORM" in
+        linux)
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                echo "  Name: $NAME"
+                echo "  Version: ${VERSION_ID:-unknown}"
+                echo "  ID: $ID"
+            fi
+            ;;
+        macos)
+            echo "  Name: macOS"
+            echo "  Version: $(sw_vers -productVersion 2>/dev/null || echo unknown)"
+            ;;
+        freebsd|openbsd|netbsd)
+            echo "  Name: $(uname -s)"
+            echo "  Version: $(uname -r)"
+            ;;
+    esac
     echo "  Kernel: $(uname -r)"
     echo "  Arch: $(uname -m)"
     echo ""
@@ -70,54 +147,56 @@ detect_display() {
 # Graphics libraries
 detect_graphics() {
     echo -e "${YELLOW}== Graphics Libraries ==${NC}"
-    check "OpenGL (glxinfo)" "command -v glxinfo"
-    check "Vulkan (vulkaninfo)" "command -v vulkaninfo"
-    check "SDL2" "pkg-config --exists sdl2 2>/dev/null || ldconfig -p | grep -q libSDL2"
-    check "SFML" "pkg-config --exists sfml-all 2>/dev/null || ldconfig -p | grep -q libsfml"
-    check "Allegro5" "pkg-config --exists allegro-5 2>/dev/null || ldconfig -p | grep -q liballegro"
-    check "Raylib" "pkg-config --exists raylib 2>/dev/null || ldconfig -p | grep -q libraylib"
-    check "Mesa" "ldconfig -p | grep -q libGL"
-    check "EGL" "ldconfig -p | grep -q libEGL"
+    checkv "OpenGL" "command -v glxinfo" "glxinfo | grep 'OpenGL version'"
+    checkv "Vulkan" "command -v vulkaninfo" "vulkaninfo | grep 'Vulkan Instance Version'"
+    checklib "SDL2" "sdl2" "libSDL2"
+    checklib "SFML" "sfml-all" "libsfml"
+    checklib "Allegro5" "allegro-5" "liballegro"
+    checklib "Raylib" "raylib" "libraylib"
+    checklib "Mesa (libGL)" "gl" "libGL"
+    checklib "EGL" "egl" "libEGL"
     echo ""
 }
 
 # Audio libraries
 detect_audio() {
     echo -e "${YELLOW}== Audio Libraries ==${NC}"
-    check "ALSA" "ldconfig -p | grep -q libasound"
-    check "PulseAudio" "command -v pulseaudio || command -v pactl"
-    check "PipeWire" "command -v pipewire"
-    check "SDL2 Mixer" "ldconfig -p | grep -q libSDL2_mixer"
-    check "OpenAL" "ldconfig -p | grep -q libopenal"
-    check "PortAudio" "ldconfig -p | grep -q libportaudio"
+    checklib "ALSA" "alsa" "libasound"
+    checkv "PulseAudio" "command -v pulseaudio || command -v pactl" "pulseaudio --version"
+    checkv "PipeWire" "command -v pipewire" "pipewire --version"
+    check "CoreAudio (macOS)" "[ \"$PLATFORM\" = 'macos' ]"
+    check "OSS (BSD)" "[ -c /dev/dsp ] || [ -c /dev/audio ]"
+    checklib "SDL2 Mixer" "SDL2_mixer" "libSDL2_mixer"
+    checklib "OpenAL" "openal" "libopenal"
+    checklib "PortAudio" "portaudio-2.0" "libportaudio"
     echo ""
 }
 
 # Languages
 detect_languages() {
     echo -e "${YELLOW}== Languages & Runtimes ==${NC}"
-    check "Python3" "command -v python3"
-    check "Python2" "command -v python2"
-    check "Rust (cargo)" "command -v cargo"
-    check "C (gcc)" "command -v gcc"
-    check "C++ (g++)" "command -v g++"
-    check "Clang" "command -v clang"
-    check "Go" "command -v go"
-    check "Java" "command -v java"
-    check "Node.js" "command -v node"
-    check "Ruby" "command -v ruby"
-    check "Lua" "command -v lua || command -v lua5.4 || command -v lua5.3"
+    checkv "Python3" "command -v python3" "python3 --version"
+    checkv "Python2" "command -v python2" "python2 --version"
+    checkv "Rust (cargo)" "command -v cargo" "cargo --version"
+    checkv "C (gcc)" "command -v gcc" "gcc --version"
+    checkv "C++ (g++)" "command -v g++" "g++ --version"
+    checkv "Clang" "command -v clang" "clang --version"
+    checkv "Go" "command -v go" "go version"
+    checkv "Java" "command -v java" "java -version 2>&1"
+    checkv "Node.js" "command -v node" "node --version"
+    checkv "Ruby" "command -v ruby" "ruby --version"
+    checkv "Lua" "command -v lua || command -v lua5.4 || command -v lua5.3" "lua -v 2>&1 || lua5.4 -v 2>&1 || lua5.3 -v 2>&1"
     echo ""
 }
 
 # Game/multimedia frameworks
 detect_frameworks() {
     echo -e "${YELLOW}== Game & Multimedia Frameworks ==${NC}"
-    check "FFmpeg" "command -v ffmpeg"
-    check "GStreamer" "command -v gst-launch-1.0"
-    check "libVLC" "ldconfig -p | grep -q libvlc"
-    check "Dear ImGui headers" "[ -f /usr/include/imgui.h ]"
-    check "Box2D" "ldconfig -p | grep -q libBox2D"
+    checkv "FFmpeg" "command -v ffmpeg" "ffmpeg -version"
+    checkv "GStreamer" "command -v gst-launch-1.0" "gst-launch-1.0 --version"
+    checklib "libVLC" "libvlc" "libvlc"
+    check "Dear ImGui headers" "[ -f /usr/include/imgui.h ] || [ -f /usr/local/include/imgui.h ]"
+    checklib "Box2D" "box2d" "libBox2D"
     echo ""
 }
 
@@ -136,6 +215,7 @@ detect_terminal() {
 
 # Main
 main() {
+    detect_platform
     print_header
     detect_os
     detect_display
